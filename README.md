@@ -3,7 +3,7 @@ Program to check CPU GPU and Motherboard sensor values, like temperature, load a
 
 User can set Interval in ms in appsetting.json
 
-For use - download HardwareMonitoringv0.2.zip and run HardwareMonitoring.exe
+For use - download HardwareMonitoring.zip and run HardwareMonitoring.exe
 To see temperature - run from admin
 
 Based on LibreHardwareMonitor (https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)

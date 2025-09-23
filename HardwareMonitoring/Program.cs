@@ -43,26 +43,5 @@ namespace HardwareMonitoringClient
             timer?.Change(Timeout.Infinite, Timeout.Infinite);
             timer?.Dispose();
         }
-        //static void Main(string[] args)
-        //{
-        //    var configuration = new ConfigurationBuilder()
-        //        .SetBasePath(Directory.GetCurrentDirectory())
-        //        .AddJsonFile("appsettings.json")
-        //        .Build();
-
-        //    long interval = long.Parse(configuration["TimerSettings:Interval"]);
-
-        //    HardwareManager hardwareManager = new HardwareManager();
-        //    HardwareDisplay temperatureDisplay = new HardwareDisplay(hardwareManager);
-
-        //    Timer timer = new Timer();
-        //    timer.Enabled = true;
-        //    timer.Interval = interval;
-        //    timer.Elapsed += (sender, e) => temperatureDisplay.DisplaySensorsValues();
-
-        //    // Ждем нажатия Enter для выхода
-        //    Console.ReadLine();
-        //    hardwareManager.Close();
-        //}
     }
 }

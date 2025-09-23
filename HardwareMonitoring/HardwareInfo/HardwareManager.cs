@@ -34,14 +34,14 @@ namespace HardwareMonitoringClient.HardwareInfo
                     {
                         foreach (ISensor sensor in subhardware.Sensors)
                         {
-                            if (sensor.SensorType == SensorType.Temperature)
+                            if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
                                 Console.WriteLine("\t{0}, temperature: {1} C", sensor.Name, sensor.Value);
                         }
                     }
                 }
 
                 foreach (ISensor sensor in hardware.Sensors)
-                    if (sensor.Name.Contains("GPU") || sensor.Name.Contains("CPU") || sensor.SensorType == SensorType.Temperature)
+                    if (sensor.Name.Contains("GPU") || sensor.Name.Contains("CPU") || sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
                         Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
             }
         }

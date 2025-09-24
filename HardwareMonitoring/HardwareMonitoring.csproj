@@ -7,7 +7,12 @@
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64</Platforms>
     <Configurations>Debug;Release;test</Configurations>
+    <ApplicationIcon>3890140.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="3890140.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.4" />

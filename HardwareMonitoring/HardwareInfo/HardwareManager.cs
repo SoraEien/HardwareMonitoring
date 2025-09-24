@@ -27,23 +27,34 @@ namespace HardwareMonitoringClient.HardwareInfo
             foreach (IHardware hardware in _computer.Hardware)
             {
                 Console.WriteLine("{0}", hardware.Name);
-
                 if (hardware.HardwareType == HardwareType.Motherboard)
-                {
-                    foreach (IHardware subhardware in hardware.SubHardware)
-                    {
-                        foreach (ISensor sensor in subhardware.Sensors)
-                        {
-                            if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
-                                Console.WriteLine("\t{0}, temperature: {1} C", sensor.Name, sensor.Value);
-                        }
-                    }
-                }
-
-                foreach (ISensor sensor in hardware.Sensors)
-                    if (sensor.Name.Contains("GPU") || sensor.Name.Contains("CPU") || sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
-                        Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
+                    await WriteMotherboardInfo(hardware);
+                else
+                    await WriteSensorInfo(hardware);
             }
         }
+
+        private async Task WriteSensorInfo(IHardware hardware)
+        {
+            var sensorTypeName = hardware.HardwareType.ToString();
+
+            foreach (ISensor sensor in hardware.Sensors)
+                if ((sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase)) || (sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor)))
+                    Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
+        }
+
+        private async Task WriteMotherboardInfo(IHardware hardware)
+        {
+            foreach (ISensor sensor in hardware.Sensors)
+                if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
+                    Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
+
+            foreach (IHardware subhardware in hardware.SubHardware)
+                foreach (ISensor sensor in subhardware.Sensors)
+                    if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
+                        Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
+        }
+
+        private bool CheckSensorValue(ISensor sensor) => sensor.Value.HasValue && sensor.Value.Value > 0;
     }
 }

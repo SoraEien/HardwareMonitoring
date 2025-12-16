@@ -1,4 +1,6 @@
-﻿namespace HardwareMonitoring.HardwareInfo.Classes
+﻿using HardwareMonitoring.Models;
+
+namespace HardwareMonitoring.HardwareInfo.Classes
 {
     public class HardwareDisplay : IHardwareDisplay
     {
@@ -22,6 +24,12 @@
 
         public async Task SentToServer()
         {
+            var data = new List<SystemModel>();
+            if (_hardwareManager is DataCreator creator)
+            {
+                creator.Update();
+                data.AddRange(creator.CreateEnumerable());
+            }
             Console.WriteLine("Sent to server");
         }
     }

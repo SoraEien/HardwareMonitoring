@@ -5,22 +5,26 @@ namespace HardwareMonitoring.HardwareInfo.Classes
 {
     public class DataCreator : HardwareManager, IDataCreator
     {
-        public IEnumerable<SystemInfoModel> CreateEnumerable()
+        public IEnumerable<SystemModel> CreateEnumerable()
         {
-            var res = new List<SystemInfoModel>();
+            var res = new List<SystemModel>();
             foreach (IHardware hardware in _computer.Hardware)
             {
+                var sys = new SystemModel();
+                sys.Name = hardware.Name;
                 if (hardware.HardwareType == HardwareType.Motherboard)
-                    res.AddRange(AddMotherboardInfo(hardware));
+                    sys.Sensors = new List<SensorModel>(AddMotherboardInfo(hardware));
                 else
-                    res.AddRange(AddSensorInfo(hardware));
+                    sys.Sensors = new List<SensorModel>(AddSensorInfo(hardware));
+                res.Add(sys);
             }
+
             return res;
         }
 
-        private IEnumerable<SystemInfoModel> AddSensorInfo(IHardware hardware)
+        private IEnumerable<SensorModel> AddSensorInfo(IHardware hardware)
         {
-            var res = new List<SystemInfoModel>();
+            var res = new List<SensorModel>();
             var sensorTypeName = hardware.HardwareType.ToString();
 
             foreach (ISensor sensor in hardware.Sensors)
@@ -30,9 +34,9 @@ namespace HardwareMonitoring.HardwareInfo.Classes
             return res;
         }
 
-        private IEnumerable<SystemInfoModel> AddMotherboardInfo(IHardware hardware)
+        private IEnumerable<SensorModel> AddMotherboardInfo(IHardware hardware)
         {
-            var res = new List<SystemInfoModel>();
+            var res = new List<SensorModel>();
 
             foreach (ISensor sensor in hardware.Sensors)
                 if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
@@ -48,7 +52,7 @@ namespace HardwareMonitoring.HardwareInfo.Classes
 
         private bool CheckSensorValue(ISensor sensor) => sensor.Value.HasValue && sensor.Value.Value > 0;
 
-        private SystemInfoModel CreateSystemInfoModel(ISensor sensor) => new SystemInfoModel
+        private SensorModel CreateSystemInfoModel(ISensor sensor) => new SensorModel
         {
             Name = sensor.Name,
             Value = sensor.Value,

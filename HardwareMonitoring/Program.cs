@@ -45,7 +45,6 @@ namespace HardwareMonitoringClient
             _temperatureDisplay.DisplaySensorsValues();
             if (_sendToServer)
                 _temperatureDisplay.SentToServer();
-
         }
 
         private static void StopTimer()

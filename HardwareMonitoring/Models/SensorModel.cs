@@ -2,7 +2,7 @@
 
 namespace HardwareMonitoring.Models
 {
-    public class SystemInfoModel
+    public class SensorModel
     {
         private string _name;
         private float? _value;

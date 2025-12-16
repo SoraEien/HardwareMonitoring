@@ -1,13 +1,15 @@
-﻿using HardwareMonitoringClient.HardwareInfo;
-using HardwareTemperature.HardwareInfo;
+﻿using HardwareMonitoring.HardwareInfo;
+using HardwareMonitoring.HardwareInfo.Classes;
 using Microsoft.Extensions.Configuration;
 
 namespace HardwareMonitoringClient
 {
     class Program
     {
-        private static Timer timer;
-        private static HardwareDisplay temperatureDisplay;
+        private static long _interval;
+        private static bool _sendToServer;
+        private static Timer _timer;
+        private static IHardwareDisplay _temperatureDisplay;
 
         static void Main(string[] args)
         {
@@ -16,13 +18,18 @@ namespace HardwareMonitoringClient
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            long interval = long.Parse(configuration["TimerSettings:Interval"]);
+            _interval = long.Parse(configuration["TimerSettings:Interval"]);
+            _sendToServer = bool.Parse(configuration["Preset:SendToServer"]);
 
-            HardwareManager hardwareManager = new HardwareManager();
-            temperatureDisplay = new HardwareDisplay(hardwareManager);
+            IHardwareManager hardwareManager;
+            if (_sendToServer)
+                hardwareManager = new DataCreator();
+            else
+                hardwareManager = new HardwareManager();
+            _temperatureDisplay = new HardwareDisplay(hardwareManager);
 
             // Инициализация таймера
-            timer = new Timer(TimerCallback, null, 0, interval);
+            _timer = new Timer(TimerCallback, null, 0, _interval);
 
             // Ждем нажатия Enter для выхода
             Console.ReadLine();
@@ -35,13 +42,16 @@ namespace HardwareMonitoringClient
         private static void TimerCallback(object state)
         {
             // Вызываем метод для отображения значений датчиков
-            temperatureDisplay.DisplaySensorsValues();
+            _temperatureDisplay.DisplaySensorsValues();
+            if (_sendToServer)
+                _temperatureDisplay.SentToServer();
+
         }
 
         private static void StopTimer()
         {
-            timer?.Change(Timeout.Infinite, Timeout.Infinite);
-            timer?.Dispose();
+            _timer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _timer?.Dispose();
         }
     }
 }

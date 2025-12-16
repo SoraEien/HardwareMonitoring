@@ -1,11 +1,10 @@
-﻿using HardwareTemperature.HardwareInfo;
-using LibreHardwareMonitor.Hardware;
+﻿using LibreHardwareMonitor.Hardware;
 
-namespace HardwareMonitoringClient.HardwareInfo
+namespace HardwareMonitoring.HardwareInfo.Classes
 {
-    public class HardwareManager
+    public class HardwareManager : IHardwareManager
     {
-        private Computer _computer;
+        protected Computer _computer;
 
         public HardwareManager()
         {
@@ -20,10 +19,10 @@ namespace HardwareMonitoringClient.HardwareInfo
 
         public void Close() => _computer.Close();
 
+        public void Update() => _computer.Accept(new UpdateVisitor());
+
         public async Task Monitor()
         {
-            _computer.Accept(new UpdateVisitor());
-
             foreach (IHardware hardware in _computer.Hardware)
             {
                 Console.WriteLine("{0}", hardware.Name);
@@ -39,7 +38,7 @@ namespace HardwareMonitoringClient.HardwareInfo
             var sensorTypeName = hardware.HardwareType.ToString();
 
             foreach (ISensor sensor in hardware.Sensors)
-                if ((sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase)) || (sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor)))
+                if (sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase) || sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor))
                     Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
         }
 

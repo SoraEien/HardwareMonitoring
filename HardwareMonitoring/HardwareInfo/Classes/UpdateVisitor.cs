@@ -1,6 +1,6 @@
 ﻿using LibreHardwareMonitor.Hardware;
 
-namespace HardwareTemperature.HardwareInfo
+namespace HardwareMonitoring.HardwareInfo.Classes
 {
     public class UpdateVisitor : IVisitor
     {

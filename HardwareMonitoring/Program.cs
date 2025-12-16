@@ -2,7 +2,7 @@
 using HardwareMonitoring.HardwareInfo.Classes;
 using Microsoft.Extensions.Configuration;
 
-namespace HardwareMonitoringClient
+namespace HardwareMonitoring
 {
     class Program
     {

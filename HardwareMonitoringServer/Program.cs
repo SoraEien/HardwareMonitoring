@@ -1,2 +1,15 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿namespace HardwareMonitoring
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Server started");
+
+            // Ждем нажатия Enter для выхода
+            Console.WriteLine("Press Enter to exit");
+
+            Console.ReadLine();
+        }
+    }
+}

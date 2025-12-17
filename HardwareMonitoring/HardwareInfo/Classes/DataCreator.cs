@@ -12,6 +12,7 @@ namespace HardwareMonitoring.HardwareInfo.Classes
             {
                 var sys = new SystemModel();
                 sys.Name = hardware.Name;
+                sys.Time = DateTime.Now;
                 if (hardware.HardwareType == HardwareType.Motherboard)
                     sys.Sensors = new List<SensorModel>(AddMotherboardInfo(hardware));
                 else

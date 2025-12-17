@@ -1,11 +1,11 @@
 ﻿using LibreHardwareMonitor.Hardware;
 
-namespace HardwareMonitoring.Models
+namespace HardwareMonitoringServer.Models
 {
     public class SensorModel
     {
-        public string Name;
-        public float? Value;
-        public SensorType SensorTypeName;
+        public string Name { get; set; }
+        public float? Value { get; set; }
+        public SensorType SensorTypeName { get; set; }
     }
 }

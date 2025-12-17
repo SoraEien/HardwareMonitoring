@@ -1,8 +1,9 @@
-﻿namespace HardwareMonitoring.Models
+﻿namespace HardwareMonitoringServer.Models
 {
     public class SystemModel
     {
-        public string Name;
-        public IEnumerable<SensorModel> Sensors;
+        public string Name { get; set; }
+        public List<SensorModel> Sensors { get; set; }
+        public DateTime DateTime { get; set; }
     }
 }

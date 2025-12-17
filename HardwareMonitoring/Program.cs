@@ -6,30 +6,26 @@ namespace HardwareMonitoring
 {
     class Program
     {
-        private static long _interval;
-        private static bool _sendToServer;
+        private static AppSettings _settings;
         private static Timer _timer;
+        private static Timer _sendTimer;
         private static IHardwareDisplay _temperatureDisplay;
 
         static void Main(string[] args)
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
-
-            _interval = long.Parse(configuration["TimerSettings:Interval"]);
-            _sendToServer = bool.Parse(configuration["Preset:SendToServer"]);
+            CreateSettinfs();
 
             IHardwareManager hardwareManager;
-            if (_sendToServer)
+            if (_settings.SendToServer)
                 hardwareManager = new DataCreator();
             else
                 hardwareManager = new HardwareManager();
-            _temperatureDisplay = new HardwareDisplay(hardwareManager);
+            _temperatureDisplay = new HardwareDisplay(hardwareManager, _settings.ServerUrl);
 
             // Инициализация таймера
-            _timer = new Timer(TimerCallback, null, 0, _interval);
+            _timer = new Timer(TimerCallback, null, 0, _settings.Interval);
+            if (_settings.SendToServer)
+                _sendTimer = new Timer(SendTimerCallback, null, 0, _settings.SendTnterval);
 
             // Ждем нажатия Enter для выхода
             Console.ReadLine();
@@ -39,18 +35,41 @@ namespace HardwareMonitoring
             hardwareManager.Close();
         }
 
+        private static void CreateSettinfs()
+        {
+            var configuration = new ConfigurationBuilder()
+                            .SetBasePath(Directory.GetCurrentDirectory())
+                            .AddJsonFile("appsettings.json")
+                            .Build();
+
+            _settings = new AppSettings(long.Parse(configuration["TimerSettings:Interval"]),
+                                        long.Parse(configuration["TimerSettings:SendIntervar"]),
+                                        bool.Parse(configuration["Preset:SendToServer"]),
+                                        configuration["ServerSettings:Url"] ?? "http://localhost:5000");
+        }
+
         private static void TimerCallback(object state)
         {
-            // Вызываем метод для отображения значений датчиков
-            _temperatureDisplay.DisplaySensorsValues();
-            if (_sendToServer)
-                _temperatureDisplay.SentToServer();
+            Task.Run(async () =>
+            {
+                await _temperatureDisplay.DisplaySensorsValues();
+            });
+        }
+
+        private static void SendTimerCallback(object state)
+        {
+            Task.Run(async () =>
+            {
+                await _temperatureDisplay.SentToServer();
+            });
         }
 
         private static void StopTimer()
         {
             _timer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _sendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             _timer?.Dispose();
+            _sendTimer?.Dispose();
         }
     }
 }

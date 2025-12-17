@@ -2,7 +2,7 @@
 
 namespace HardwareMonitoring.HardwareInfo
 {
-    public interface IDataCreator
+    public interface IDataCreator : IHardwareManager
     {
         IEnumerable<SystemModel> CreateEnumerable();
     }

@@ -1,15 +1,26 @@
-﻿namespace HardwareMonitoring
+﻿using HardwareMonitoringServer.Monitor;
+
+namespace HardwareMonitoringServer
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Server started");
+            var builder = WebApplication.CreateBuilder(args);
 
-            // Ждем нажатия Enter для выхода
-            Console.WriteLine("Press Enter to exit");
+            builder.Services.AddSingleton<DataMonitoring>();
 
-            Console.ReadLine();
+            builder.Services.AddControllers();
+
+            builder.WebHost.UseUrls("http://localhost:5050");
+
+            var app = builder.Build();
+
+            app.MapControllers();
+
+            Console.WriteLine("Server started with Controllers...");
+
+            app.Run();
         }
     }
 }

@@ -8,5 +8,8 @@ namespace HardwareMonitoringServer.Monitor
 
         public void AddSys(SystemModel model) => _systems.Add(model);
         public void AddSys(IEnumerable<SystemModel> model) => _systems.AddRange(model);
+        public void ClearSys() => _systems.Clear();
+
+        public IEnumerable<SystemModel> GetSysData() => _systems;
     }
 }

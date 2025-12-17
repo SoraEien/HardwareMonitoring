@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мониторинг данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* Главный контейнер для скролла */
+        .excel-viewport {
+            max-height: 75vh;
+            overflow: auto;
+            border: 1px solid #dee2e6;
+            position: relative;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        /* Фиксация заголовков при вертикальном скролле */
+        thead th {
+            position: sticky;
+            background: #f8f9fa;
+            z-index: 5;
+            top: 0;
+            border: 1px solid #dee2e6 !important;
+        }
+
+        /* Второй ряд заголовков (датчики) */
+        .header-row-2 th {
+            top: 41px;
+            z-index: 5;
+        }
+
+        /* Фиксация первого столбца (Время) при горизонтальном скролле */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 10; /* Выше чем у обычных заголовков */
+            background-color: #f1f1f1;
+            border-right: 2px solid #bbb !important;
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        /* Пересечение: Левый верхний угол должен быть выше всех */
+        thead th.sticky-col {
+            z-index: 15;
+        }
+
+        td, th {
+            white-space: nowrap;
+            padding: 6px 12px;
+            text-align: center;
+        }
+
+        tr:hover td {
+            background-color: #f2f7ff;
+        }
+
+        .empty-cell {
+            color: #ccc;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div id="app" class="container-fluid py-3">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Актуальные данные мониторинга</h4>
+            <a href="index.html" class="btn btn-outline-secondary btn-sm">← На главную</a>
+        </div>
+
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="row align-items-end g-3">
+                    <div class="col-md-3">
+                        <label class="small fw-bold">С даты:</label>
+                        <input type="datetime-local" v-model="filterFrom" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small fw-bold">По дату:</label>
+                        <input type="datetime-local" v-model="filterTo" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-2">
+                        <button @click="fetchData" class="btn btn-primary btn-sm w-100">Загрузить данные</button>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-top" v-if="computerNames.length">
+                    <span class="me-2 small fw-bold">Компьютер:</span>
+                    <div class="btn-group btn-group-sm">
+                        <button v-for="name in computerNames"
+                                @click="selectedComputer = name"
+                                :class="['btn', selectedComputer === name ? 'btn-dark' : 'btn-outline-dark']">
+                            {{ name }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="selectedComputer" class="excel-viewport bg-white">
+            <table class="table-bordered">
+                <thead>
+                    <tr>
+                        <th class="sticky-col" rowspan="2">Время</th>
+                        <th v-for="sys in tableSchema" :colspan="sys.sensors.length">
+                            {{ sys.name }}
+                        </th>
+                    </tr>
+                    <tr class="header-row-2">
+                        <template v-for="sys in tableSchema">
+                            <th v-for="sName in sys.sensors">{{ sName }}</th>
+                        </template>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="row in filteredRows" :key="row.time">
+                        <td class="sticky-col">{{ formatTime(row.time) }}</td>
+                        <template v-for="sys in tableSchema">
+                            <td v-for="sName in sys.sensors">
+                                {{ findValue(row, sys.name, sName) }}
+                            </td>
+                        </template>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div v-else-if="!rawData.length" class="text-center p-5 text-muted">
+            <h5>Нажмите "Загрузить данные", чтобы начать</h5>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    rawData: [],
+                    selectedComputer: null,
+                    filterFrom: '',
+                    filterTo: ''
+                }
+            },
+            computed: {
+                computerNames() {
+                    return [...new Set(this.rawData.map(d => d.name))];
+                },
+                filteredRows() {
+                    if (!this.selectedComputer) return [];
+                    let data = this.rawData.filter(d => d.name === this.selectedComputer);
+                    if (this.filterFrom) data = data.filter(d => new Date(d.time) >= new Date(this.filterFrom));
+                    if (this.filterTo) data = data.filter(d => new Date(d.time) <= new Date(this.filterTo));
+                    return data.sort((a, b) => new Date(b.time) - new Date(a.time));
+                },
+                // Генерирует стабильную структуру колонок
+                tableSchema() {
+                    if (!this.filteredRows.length) return [];
+                    const schema = {};
+
+                    this.filteredRows.forEach(entry => {
+                        entry.systems.forEach(sys => {
+                            // Если у системы есть сенсоры, добавляем их в схему
+                            if (sys.sensors && sys.sensors.length > 0) {
+                                if (!schema[sys.name]) schema[sys.name] = new Set();
+                                sys.sensors.forEach(s => schema[sys.name].add(s.name));
+                            }
+                        });
+                    });
+
+                    return Object.keys(schema).map(sysName => ({
+                        name: sysName,
+                        sensors: Array.from(schema[sysName])
+                    }));
+                }
+            },
+            methods: {
+                async fetchData() {
+                    try {
+                        const response = await fetch('/api/data');
+                        const data = await response.json();
+                        this.rawData = data;
+                        if (this.computerNames.length > 0 && !this.selectedComputer) {
+                            this.selectedComputer = this.computerNames[0];
+                        }
+                    } catch (e) { alert("Ошибка связи с сервером"); }
+                },
+                formatTime(dateStr) {
+                    const d = new Date(dateStr);
+                    return d.toLocaleTimeString();
+                },
+                // Метод для точного поиска значения в ячейке
+                findValue(row, systemName, sensorName) {
+                    const system = row.systems.find(s => s.name === systemName);
+                    if (!system) return "";
+                    const sensor = system.sensors.find(s => s.name === sensorName);
+                    return (sensor && sensor.value !== null) ? sensor.value.toFixed(1) : "-";
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

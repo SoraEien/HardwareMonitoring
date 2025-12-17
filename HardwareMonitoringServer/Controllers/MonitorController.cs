@@ -1,5 +1,4 @@
-﻿using HardwareMonitoringServer.Models;
-using HardwareMonitoringServer.Monitor;
+﻿using HardwareMonitoringServer.Monitor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HardwareMonitoringServer.Controllers
@@ -15,7 +14,7 @@ namespace HardwareMonitoringServer.Controllers
         }
 
         [HttpPost]
-        public IActionResult ReceiveData([FromBody] List<SystemModel> data)
+        public IActionResult ReceiveData([FromBody] ComputerModel data)
         {
             _dataMonitor.AddSys(data);
 

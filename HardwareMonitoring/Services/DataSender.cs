@@ -15,7 +15,7 @@ namespace HardwareMonitoring.Services
             _serverUrl = serverUrl + REQUARED_SERVICE_URL;
         }
 
-        public async Task SendDataAsync(IEnumerable<SystemModel> data)
+        public async Task SendDataAsync(ComputerModel data)
         {
             try
             {

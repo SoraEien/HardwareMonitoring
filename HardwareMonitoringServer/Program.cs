@@ -1,4 +1,6 @@
-﻿using HardwareMonitoringServer.Monitor;
+﻿using HardwareMonitoringServer.DbSetting;
+using HardwareMonitoringServer.Monitor;
+using Microsoft.EntityFrameworkCore;
 
 namespace HardwareMonitoringServer
 {
@@ -15,6 +17,8 @@ namespace HardwareMonitoringServer
                                            ?? throw new InvalidOperationException("ClearInterval not found."));
             var baseUrl = configuration["Base:Url"] ?? "http://localhost:5050";
 
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite("Data Source=hardware_monitor.db"));
 
             builder.Services.AddSingleton<DataMonitoring>();
 
@@ -22,13 +26,34 @@ namespace HardwareMonitoringServer
 
             builder.WebHost.UseUrls(baseUrl);
 
+            builder.Services.AddRazorPages();
+
             var app = builder.Build();
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.MapControllers();
 
             var dataMonitoringService = app.Services.GetRequiredService<DataMonitoring>();
 
-            TimerCallback timerDelegate = _ => dataMonitoringService.ClearSys();
+            TimerCallback timerDelegate = _ =>
+            {
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var monitor = scope.ServiceProvider.GetRequiredService<DataMonitoring>();
+
+                    var averagedData = monitor.GetAveragedData();
+                    if (averagedData.Any())
+                    {
+                        db.Computers.AddRange(averagedData);
+                        db.SaveChanges();
+                        monitor.ClearSys();
+                        Console.WriteLine($"Saved {averagedData.Count} records to DB.");
+                    }
+                }
+            };
 
             _clearTimer = new Timer(timerDelegate,
                                     null,

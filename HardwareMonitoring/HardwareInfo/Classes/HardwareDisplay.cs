@@ -5,13 +5,15 @@ namespace HardwareMonitoring.HardwareInfo.Classes
 {
     public class HardwareDisplay : IHardwareDisplay
     {
+        private readonly string _name;
         private readonly DataSender _dataSender;
         private readonly IHardwareManager _hardwareManager;
 
-        public HardwareDisplay(IHardwareManager manager, string serverUrl)
+        public HardwareDisplay(IHardwareManager manager, string serverUrl, string name)
         {
             _hardwareManager = manager;
             _dataSender = new DataSender(serverUrl);
+            _name = name;
         }
 
         public async Task DisplaySensorsValues()
@@ -27,16 +29,19 @@ namespace HardwareMonitoring.HardwareInfo.Classes
 
         public async Task SentToServer()
         {
-            var data = new List<SystemModel>();
             if (_hardwareManager is IDataCreator creator)
             {
                 creator.Update();
                 var dataEnumerable = creator.CreateEnumerable();
                 var dataList = dataEnumerable.ToList();
 
-                if (dataList.Any())
+                var data = new ComputerModel(_name);
+
+                data.Systems = dataList;
+
+                if (dataList.Count != 0)
                 {
-                    await _dataSender.SendDataAsync(dataList);
+                    await _dataSender.SendDataAsync(data);
                 }
             }
         }

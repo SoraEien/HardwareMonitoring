@@ -13,6 +13,8 @@ namespace HardwareMonitoring
 
         static void Main(string[] args)
         {
+            Console.WriteLine("Input you name: ");
+            var name = Console.ReadLine();
             CreateSettinfs();
 
             IHardwareManager hardwareManager;
@@ -20,7 +22,7 @@ namespace HardwareMonitoring
                 hardwareManager = new DataCreator();
             else
                 hardwareManager = new HardwareManager();
-            _temperatureDisplay = new HardwareDisplay(hardwareManager, _settings.ServerUrl);
+            _temperatureDisplay = new HardwareDisplay(hardwareManager, _settings.ServerUrl, name);
 
             // Инициализация таймера
             _timer = new Timer(TimerCallback, null, 0, _settings.Interval);

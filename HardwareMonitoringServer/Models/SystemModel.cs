@@ -1,9 +1,10 @@
 ﻿namespace HardwareMonitoringServer.Models
 {
-    public class SystemModel
+    public class SystemModel : IEntity<long>
     {
+        public long Id { get; set; }
         public string Name { get; set; }
-        public List<SensorModel> Sensors { get; set; }
-        public DateTime DateTime { get; set; }
+        public int ComputerModelId { get; set; }
+        public List<SensorModel> Sensors { get; set; } = new();
     }
 }

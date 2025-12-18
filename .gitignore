@@ -417,3 +417,5 @@ FodyWeavers.xsd
 *.msm
 *.msp
 /HardwareMonitoringServer/hardware_monitor.db
+/HardwareMonitoringServer/hardware_monitor.db-shm
+/HardwareMonitoringServer/hardware_monitor.db-wal

@@ -16,9 +16,10 @@ namespace HardwareMonitoringServer
             var clearInterval = long.Parse(configuration["TimerSettings:ClearInterval"]
                                            ?? throw new InvalidOperationException("ClearInterval not found."));
             var baseUrl = configuration["Base:Url"] ?? "http://localhost:5050";
+            var dbConnection = configuration["ConnectionStrings:DefaultConnection"] ?? "Data Source=hardware_monitor.db";
 
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite("Data Source=hardware_monitor.db"));
+                options.UseSqlite(dbConnection));
 
             builder.Services.AddSingleton<DataMonitoring>();
 

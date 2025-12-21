@@ -38,22 +38,25 @@ namespace HardwareMonitoring.HardwareInfo.Classes
             var sensorTypeName = hardware.HardwareType.ToString();
 
             foreach (ISensor sensor in hardware.Sensors)
-                if (sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase) || sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor))
+                if (CheckSensorValue(sensor))
+                    //if (sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase) || sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor))
                     Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
         }
 
         private async Task WriteMotherboardInfo(IHardware hardware)
         {
             foreach (ISensor sensor in hardware.Sensors)
-                if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
+                if (CheckSensorValue(sensor))
+                    //if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
                     Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
 
             foreach (IHardware subhardware in hardware.SubHardware)
                 foreach (ISensor sensor in subhardware.Sensors)
-                    if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
+                    if (CheckSensorValue(sensor))
+                        //if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
                         Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
         }
 
-        private bool CheckSensorValue(ISensor sensor) => sensor.Value.HasValue && sensor.Value.Value > 0;
+        private bool CheckSensorValue(ISensor sensor) => sensor.Value.HasValue /*&& sensor.Value.Value > 0*/;
     }
 }

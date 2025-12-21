@@ -57,6 +57,6 @@ namespace HardwareMonitoring.HardwareInfo.Classes
                         Console.WriteLine("\t{0}, {2}: {1}", sensor.Name, sensor.Value, sensor.SensorType);
         }
 
-        private bool CheckSensorValue(ISensor sensor) => sensor.Value.HasValue /*&& sensor.Value.Value > 0*/;
+        private bool CheckSensorValue(ISensor sensor) => sensor.Value.HasValue && sensor.Value.Value > 0;
     }
 }

@@ -1,0 +1,274 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>История (DB)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        #chartWrapper {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .bg-gradient-dark {
+            background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="bg-gradient-dark">
+    <div id="app" class="container py-5" v-cloak>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+            <h2>Архив данных (SQLite)</h2>
+            <a href="index.html" class="btn btn-outline-light btn-sm">← Меню</a>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">С даты:</label>
+                        <input type="datetime-local" v-model="filterFrom" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">По дату:</label>
+                        <input type="datetime-local" v-model="filterTo" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <button @click="loadHistory" class="btn btn-success w-100" :disabled="loading">
+                            <span v-if="loading" class="spinner-border spinner-border-sm"></span>
+                            {{ loading ? 'Загрузка...' : 'Показать данные' }}
+                        </button>
+                    </div>
+                    <div class="col-md-3 text-end text-muted small">
+                        <div v-if="rawData.length > 0">Записей: {{ rawData.length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4" v-if="computerNames.length > 0">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">Компьютер</div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button v-for="name in computerNames"
+                                    :key="name"
+                                    @click="selectComputer(name)"
+                                    :class="['btn', selectedComputer === name ? 'btn-dark' : 'btn-outline-dark']">
+                                {{ name }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">Датчик</div>
+                    <div class="card-body">
+                        <select class="form-select" v-model="selectedSensorKey" @change="updateChart">
+                            <option :value="null" disabled>-- Выберите датчик --</option>
+                            <optgroup v-for="(sensors, sysName) in groupedSensors" :key="sysName" :label="sysName">
+                                <option v-for="s in sensors" :key="s.key" :value="s.key">
+                                    {{ s.sensorName }}
+                                </option>
+                            </optgroup>
+                        </select>
+                        <div class="text-muted mt-2 small" v-if="!selectedSensorKey">
+                            Выберите датчик из списка выше для построения графика.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-3" v-show="selectedSensorKey">
+            <h5 class="card-title text-center text-secondary">{{ selectedComputer }} / {{ selectedSensorKey?.replace('|', ' - ') }}</h5>
+            <div id="chartWrapper">
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+
+        <div v-if="rawData.length === 0 && !loading" class="alert alert-info text-center mt-5">
+            Выберите временной период и нажмите "Показать данные", чтобы загрузить информацию из базы.
+        </div>
+
+    </div>
+
+    <script>const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    rawData: [], // Данные из БД
+                    loading: false,
+                    chartInstance: null,
+
+                    // Фильтры времени (по умолчанию последние 24 часа)
+                    filterFrom: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+                    filterTo: new Date().toISOString().slice(0, 16),
+
+                    selectedComputer: null,
+                    selectedSensorKey: null
+                }
+            },
+            computed: {
+                // Список уникальных имен компьютеров
+                computerNames() {
+                    return [...new Set(this.rawData.map(d => d.name))];
+                },
+                // Список доступных сенсоров для выбранного компьютера
+                availableSensors() {
+                    if (!this.selectedComputer) return [];
+                    const sensorsMap = new Map();
+
+                    this.rawData
+                        .filter(d => d.name === this.selectedComputer)
+                        .forEach(entry => {
+                            if (entry.systems) {
+                                entry.systems.forEach(sys => {
+                                    if (sys.sensors) {
+                                        sys.sensors.forEach(s => {
+                                            const key = sys.name + '|' + s.name;
+                                            if (!sensorsMap.has(key)) {
+                                                sensorsMap.set(key, {
+                                                    key,
+                                                    systemName: sys.name,
+                                                    sensorName: s.name
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    return Array.from(sensorsMap.values());
+                },
+                // Группировка сенсоров для select
+                groupedSensors() {
+                    const groups = {};
+                    this.availableSensors.forEach(s => {
+                        if (!groups[s.systemName]) groups[s.systemName] = [];
+                        groups[s.systemName].push(s);
+                    });
+                    return groups;
+                }
+            },
+            methods: {
+                async loadHistory() {
+                    this.loading = true;
+                    this.rawData = [];
+                    this.selectedComputer = null;
+                    this.selectedSensorKey = null;
+                    if(this.chartInstance) this.chartInstance.destroy();
+
+                    try {
+                        // Формируем query параметры
+                        const params = new URLSearchParams({
+                            start: new Date(this.filterFrom).toISOString(),
+                            end: new Date(this.filterTo).toISOString()
+                        });
+
+                        // Запрос к НАШЕМУ НОВОМУ КОНТРОЛЛЕРУ
+                        const res = await fetch(`/api/history?${params}`);
+                        if(!res.ok) throw new Error("Ошибка загрузки");
+
+                        this.rawData = await res.json();
+
+                        if(this.rawData.length === 0) {
+                            alert("За выбранный период данных в БД не найдено.");
+                        } else {
+                            // Автовыбор первого ПК
+                            this.selectedComputer = this.computerNames[0];
+                        }
+
+                    } catch (e) {
+                        console.error(e);
+                        alert("Ошибка соединения с сервером");
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                selectComputer(name) {
+                    this.selectedComputer = name;
+                    this.selectedSensorKey = null; // Сброс сенсора при смене ПК
+                    if(this.chartInstance) this.chartInstance.destroy();
+                },
+                updateChart() {
+                    if (!this.selectedSensorKey || !this.selectedComputer) return;
+
+                    const [sysName, sensName] = this.selectedSensorKey.split('|');
+
+                    // Подготовка данных для графика
+                    // Фильтруем массив rawData локально (он уже ограничен датой с сервера)
+                    const points = this.rawData
+                        .filter(r => r.name === this.selectedComputer)
+                        .map(r => {
+                            // Ищем значение нужного сенсора в этой временной точке
+                            const sys = r.systems.find(s => s.name === sysName);
+                            const sens = sys ? sys.sensors.find(s => s.name === sensName) : null;
+                            return {
+                                x: r.time, // Время (ось X)
+                                y: sens ? sens.value : null // Значение (ось Y)
+                            };
+                        })
+                        .filter(p => p.y !== null); // Убираем пустые точки
+
+                    const labels = points.map(p => new Date(p.x).toLocaleString());
+                    const data = points.map(p => p.y);
+
+                    this.renderChart(labels, data, sensName);
+                },
+                renderChart(labels, data, title) {
+                    this.$nextTick(() => {
+                        const ctx = document.getElementById('historyChart');
+                        if (this.chartInstance) this.chartInstance.destroy();
+
+                        this.chartInstance = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: title,
+                                    data: data,
+                                    borderColor: '#198754', // Зеленый цвет для истории
+                                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                                    fill: true,
+                                    tension: 0.1,
+                                    pointRadius: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                interaction: {
+                                    intersect: false,
+                                    mode: 'index',
+                                },
+                                scales: {
+                                    x: { display: true },
+                                    y: { display: true, beginAtZero: false }
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+        }).mount('#app');</script>
+</body>
+</html>

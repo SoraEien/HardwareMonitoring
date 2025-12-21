@@ -28,7 +28,8 @@ namespace HardwareMonitoring.HardwareInfo.Classes
             var sensorTypeName = hardware.HardwareType.ToString();
 
             foreach (ISensor sensor in hardware.Sensors)
-                if (sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase) || sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor))
+                if (CheckSensorValue(sensor))
+                    //if (sensor.SensorType == SensorType.Load && sensor.Name.Contains(sensorTypeName, StringComparison.OrdinalIgnoreCase) || sensor.SensorType == SensorType.Temperature && CheckSensorValue(sensor))
                     res.Add(CreateSystemInfoModel(sensor));
 
             return res;
@@ -39,12 +40,14 @@ namespace HardwareMonitoring.HardwareInfo.Classes
             var res = new List<SensorModel>();
 
             foreach (ISensor sensor in hardware.Sensors)
-                if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
+                if (CheckSensorValue(sensor))
+                    //if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
                     res.Add(CreateSystemInfoModel(sensor));
 
             foreach (IHardware subhardware in hardware.SubHardware)
                 foreach (ISensor sensor in subhardware.Sensors)
-                    if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
+                    if (CheckSensorValue(sensor))
+                        //if ((sensor.SensorType == SensorType.Fan || sensor.SensorType == SensorType.Temperature) && CheckSensorValue(sensor))
                         res.Add(CreateSystemInfoModel(sensor));
 
             return res;

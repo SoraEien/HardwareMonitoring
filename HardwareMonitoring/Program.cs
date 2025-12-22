@@ -13,9 +13,16 @@ namespace HardwareMonitoring
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Input you name: ");
-            var name = Console.ReadLine();
+            string name;
             CreateSettinfs();
+
+            if (_settings.UsePcName)
+            {
+                Console.WriteLine("Input you name: ");
+                name = Console.ReadLine();
+            }
+            else name = _settings.PcName;
+
 
             IHardwareManager hardwareManager;
             if (_settings.SendToServer)
@@ -47,7 +54,9 @@ namespace HardwareMonitoring
             _settings = new AppSettings(long.Parse(configuration["TimerSettings:Interval"]),
                                         long.Parse(configuration["TimerSettings:SendIntervar"]),
                                         bool.Parse(configuration["Preset:SendToServer"]),
-                                        configuration["ServerSettings:Url"] ?? "http://localhost:5000");
+                                        configuration["ServerSettings:Url"] ?? "http://localhost:5000",
+                                        configuration["Preset:DefName"] ?? "notSet",
+                                        bool.Parse(configuration["Preset:UseDefName"]));
         }
 
         private static void TimerCallback(object state)
